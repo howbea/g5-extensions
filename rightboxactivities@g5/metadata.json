@@ -1,0 +1,11 @@
+{
+  "name": "Right Box Activities",
+  "description": "activities button in right panel box",
+  "uuid": "rightboxactivities@g5",
+  "shell-version": [
+    "40",
+    "41",
+    "50",
+    "51"
+  ]
+}

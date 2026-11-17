@@ -1,0 +1,11 @@
+{
+  "name": "Hide System Item",
+  "description": "Hide system items in Quicksettings",
+  "uuid": "hidesystemitem@g5",
+  "shell-version": [
+    "48",
+    "49",
+    "50",
+    "51"
+  ]
+}
