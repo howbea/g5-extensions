@@ -39,10 +39,6 @@ import * as BoxPointer from 'resource:///org/gnome/shell/ui/boxpointer.js';
 import * as Layout from 'resource:///org/gnome/shell/ui/layout.js';
 import * as AppDisplay from 'resource:///org/gnome/shell/ui/appDisplay.js';
 
-const HOT_CORNER_PRESSURE_THRESHOLD = 100;
-const HOT_CORNER_PRESSURE_TIMEOUT = 1000;
-
-
 var AggregateLayout = GObject.registerClass(
 class AggregateLayout extends Clutter.BoxLayout {
     _init(params = {}) {
@@ -69,80 +65,6 @@ class AggregateLayout extends Clutter.BoxLayout {
             natWidth = Math.max(natWidth, childNat);
         }
         return [minWidth, natWidth];
-    }
-});
-
-export const HotCornerPlus = GObject.registerClass(
-class HotCornerPlus extends Clutter.Actor {
-    _init(layoutManager, monitor) {
-        super._init();
-
-        this._monitor = monitor;
-
-        this._pressureBarrier = new Layout.PressureBarrier(
-            HOT_CORNER_PRESSURE_THRESHOLD,
-            HOT_CORNER_PRESSURE_TIMEOUT,
-            Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW);
-
-        this._pressureBarrier.connect(
-            'trigger',
-            this._toggleOverview.bind(this));
-
-        this._horizontalBarrier = null;
-
-        this.connect('destroy', this._onDestroy.bind(this));
-    }
-
-    setBarrierSize(size) {
-    if (this._verticalBarrier) {
-        this._pressureBarrier.removeBarrier(this._verticalBarrier);
-        this._verticalBarrier.destroy();
-        this._verticalBarrier = null;
-    }
-
-    if (this._horizontalBarrier) {
-        this._pressureBarrier.removeBarrier(this._horizontalBarrier);
-        this._horizontalBarrier.destroy();
-        this._horizontalBarrier = null;
-    }
-
-    if (size > 0) {
-        this._verticalBarrier = new Meta.Barrier({
-            backend: global.backend,
-            x1: this._monitor.x,
-            x2: this._monitor.x,
-            y1: this._monitor.y,
-            y2: this._monitor.y + size,
-            directions: Meta.BarrierDirection.POSITIVE_X,
-        });
-
-        this._horizontalBarrier = new Meta.Barrier({
-            backend: global.backend,
-            x1: this._monitor.x,
-            x2: this._monitor.x + this._monitor.width,
-            y1: this._monitor.y,
-            y2: this._monitor.y,
-            directions: Meta.BarrierDirection.POSITIVE_Y,
-        });
-
-        this._pressureBarrier.addBarrier(this._verticalBarrier);
-        this._pressureBarrier.addBarrier(this._horizontalBarrier);
-    }
-}
-
-    _onDestroy() {
-        this.setBarrierSize(0);
-
-        this._pressureBarrier.destroy();
-        this._pressureBarrier = null;
-    }
-
-    _toggleOverview() {
-        if (this._monitor.inFullscreen && !Main.overview.visible)
-            return;
-
-        if (Main.overview.shouldToggleByCornerOrButton())
-            Main.overview.toggle();
     }
 });
 
@@ -634,24 +556,6 @@ class MainMenuButton extends PanelMenu.Button {
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addMenuItem(itemabout);
         
-    }
-    
-    _updateHotCorners() {    
-        Main.layoutManager._destroyHotCorners();
-
-        const size = Main.layoutManager.panelBox.height;
-
-        for (const monitor of Main.layoutManager.monitors) {
-            const hotCornerPlus = new HotCornerPlus(
-                Main.layoutManager,
-                monitor,
-            );
-
-            hotCornerPlus.setBarrierSize(size);
-
-            Main.layoutManager.hotCorners.push(hotCornerPlus);
-        }
-        Main.layoutManager.emit('hot-corners-changed');
     }
 
     handleDragOver(source, _actor, _x, _y, _time) {
