@@ -268,9 +268,12 @@ class MainMenuButton extends PanelMenu.Button {
         name = getName();
         this.sppop = new PopupMenu.PopupSeparatorMenuItem(name);
         this._sessionSubMenu.menu.addMenuItem(this.sppop);
-        this.sppop.add_style_class_name = 'sppop';
         
-        //this._sessionSubMenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        this._systemActions.bind_property('can-logout',
+            this.sppop, 'visible',
+            bindFlags);
+
+        this._sessionSubMenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         
         item = new PopupMenu.PopupImageMenuItem(_('Lock'), 'changes-prevent-symbolic');
         item.connect('activate', () => {
@@ -290,10 +293,9 @@ class MainMenuButton extends PanelMenu.Button {
             this._systemActions.activateLogout();
         });
         this._sessionSubMenu.menu.addMenuItem(item);
-        this._logoutItem = item;
         
-        
-        
+        this._logoutItem = item;     
+
         this.update = () => {
             name = getName();
             //this._logoutItem.label.text = _('Log Out %s…').format(name);
@@ -304,6 +306,12 @@ class MainMenuButton extends PanelMenu.Button {
         this._systemActions.bind_property('can-logout',
             this._logoutItem, 'visible',
             bindFlags);
+            
+        if(this._logoutItem.visible)
+            this._sessionSubMenu.menu.addMenuItem(this.sppop);
+        else
+            this._sessionSubMenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            
 
         item = new PopupMenu.PopupMenuItem(_('Switch User…'));
         item.connect('activate', () => {
