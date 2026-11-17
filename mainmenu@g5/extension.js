@@ -146,8 +146,8 @@ class HotCornerPlus extends Clutter.Actor {
     }
 });
 
-const MainMenuButton = GObject.registerClass(
-class MainMenuButton extends PanelMenu.Button {
+const ActivitiesMenuButton = GObject.registerClass(
+class ActivitiesMenuButton extends PanelMenu.Button {
     _init() {
         super._init(0.5, null);
         
@@ -158,12 +158,14 @@ class MainMenuButton extends PanelMenu.Button {
         this.menu.box.add_style_class_name('main-menu');
 
         this.set({
-            name: 'panelMainMenu',
+            name: 'panelActivitiesMenu',
             accessible_role: Atk.Role.TOGGLE_BUTTON,
-            accessible_name: _('MainMenu'),
+            /* Translators: If there is no suitable word for "Activities"
+               in your language, you can use the word for "Overview". */
+            accessible_name: _('ActivitiesMenu'),
         });
         
-        let bin = new St.Bin();
+        let bin = new St.Bin({name: 'activitiesMenu'});
         this.add_child(bin);
         
         this._container = new St.BoxLayout({style_class: 'panel-status-menu-box'});
@@ -175,15 +177,17 @@ class MainMenuButton extends PanelMenu.Button {
         this._container.add_child(this._iconBox);        
           
         this._label = new St.Label({
-            text: _('Main'),
+            text: _('Ubuntu'),
+            //text: "\uE001",
             y_align: Clutter.ActorAlign.CENTER,
-            style_class: 'main-menu-label',
+            style_class: 'activities-label',
         });        
         //this._container.add_child(this._label);
         
         const icon = new St.Icon({
+            //icon_name: 'debian-logo-symbolic',
             icon_name: 'start-here-symbolic',
-            style_class: 'main-menu-icon',
+            style_class: 'activities-icon',
         });
         this._iconBox.set_child(icon);
         
@@ -225,9 +229,26 @@ class MainMenuButton extends PanelMenu.Button {
         this.smappsitem = new PopupMenu.PopupSubMenuMenuItem(_('Recent Items'), true);
         this.smappsitem.icon.icon_name = 'document-open-recent-symbolic';
 
+        /*this._showingSignal = Main.overview.connect('showing', () => {
+            this.add_style_pseudo_class('checked');
+            this.add_accessible_state(Atk.StateType.CHECKED);
+        });        
+        
+        this._hidingSignal = Main.overview.connect('hiding', () => {
+            this.remove_style_pseudo_class('checked');
+            this.remove_accessible_state(Atk.StateType.CHECKED);
+        });*/
+
         this._xdndTimeOut = 0;
         
         this.menu_build();
+        
+        /*this.smappsitem.menu.connect('open-state-changed', (menu, open) => {
+            if (open) {
+                this.smappsitem.menu.removeAll();
+                this.submenubuild();
+                }
+        });*/  
     }
     
     _sessionUpdated() {
@@ -329,11 +350,11 @@ class MainMenuButton extends PanelMenu.Button {
             return user.get_real_name() || user.get_user_name();
         }
         let name;
-        
         name = getName();
-        
         this.sppop = new PopupMenu.PopupSeparatorMenuItem(name);
-        this._sessionSubMenu.menu.addMenuItem(this.sppop);        
+        this._sessionSubMenu.menu.addMenuItem(this.sppop);
+        this.sppop.add_style_class_name = 'sppop';
+        
         //this._sessionSubMenu.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         
         item = new PopupMenu.PopupImageMenuItem(_('Lock'), 'changes-prevent-symbolic');
@@ -346,6 +367,7 @@ class MainMenuButton extends PanelMenu.Button {
         this._systemActions.bind_property('can-lock-screen',
             this._lockScreenItem, 'visible',
             bindFlags);            
+        //this._sessionSubMenu.menu.addMenuItem(this._lockScreenItem);
         
         item = new PopupMenu.PopupMenuItem(_('Log Out…'));
         item.connect('activate', () => {
@@ -355,8 +377,11 @@ class MainMenuButton extends PanelMenu.Button {
         this._sessionSubMenu.menu.addMenuItem(item);
         this._logoutItem = item;
         
+        
+        
         this.update = () => {
             name = getName();
+            //this._logoutItem.label.text = _('Log Out %s…').format(name);
             this.sppop.label.text = name;
         };
         this.update();
@@ -607,9 +632,11 @@ class MainMenuButton extends PanelMenu.Button {
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addMenuItem(this.smappsitem);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+       
         this.menu.addMenuItem(this._settingsItem);
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        this.menu.addMenuItem(itemsoftware);
+        //this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        //this.menu.addMenuItem(itemsoftware);
+        
         this.menu.addMenuItem(itemhelp);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addMenuItem(itemabout);
@@ -710,7 +737,7 @@ export default class IndicatorExampleExtension extends Extension {
     enable() {
         if (Main.panel.statusArea['activities'])
             Main.panel.statusArea['activities'].hide();
-        this._indicator = new MainMenuButton();
+        this._indicator = new ActivitiesMenuButton();
         Main.panel.addToStatusArea(this.uuid, this._indicator, 0, 'left');
         
         const controls = Main.overview._overview.controls;
