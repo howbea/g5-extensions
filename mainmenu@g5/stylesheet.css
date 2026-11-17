@@ -1,31 +1,19 @@
 /* Add your custom extension styling here */
 
-#panelActivitiesMenu {
+#panelMainMenu {
 }
 
-#panel .panel-button#panelActivitiesMenu StBoxLayout {
+#panel .panel-button#panelMainMenu StBoxLayout {
       padding: 0 0.2045em;
       spacing: 5px; 
 }
 
-#panelActivitiesMenu .activities-icon {
+#panelMainMenu .main-menu-icon {
   -st-icon-style: symbolic;
-  icon-size: 1.1em;
+  icon-size: 1.15em;
 }
 
-.activities-label {
-}
-
-.main-menu .popup-sub-menu .popup-menu-item .panel-apps-favorites-box {
-}
-  
-
-
-.main-menu .items-box {
-spacing: 9px;
-}
-.space-widget {
-
+.Main-menu-label {
 }
   
 .main-menu {
@@ -43,26 +31,3 @@ spacing: 9px;
     margin-left: 1em; }
   .main-menu .popup-sub-menu .popup-menu-item > :first-child:rtl {
     margin-right: 1em; }
-    
-  .activities-running-apps {
-    spacing: 15px;
-    margin-right: 8px;
-    }
-
-.applications-panel {
-}
-
-.main-menu .popup-sub-menu .popup-separator-menu-item > :first-child:ltr {
-    }
-    
-.main-menu .popup-inactive-menu-item > StLabel {
-  font-weight: 700;
-  font-size: 0.818em; }
-  
-  .my-rounded-menu {
-  
-}
-
-.main-menu .popup-sub-menu .popup-separator-menu-item.sppop > :first-child:ltr{
-margin-left: 16px;
-}
