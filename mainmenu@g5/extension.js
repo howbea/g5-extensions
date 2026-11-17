@@ -146,8 +146,8 @@ class HotCornerPlus extends Clutter.Actor {
     }
 });
 
-const ActivitiesMenuButton = GObject.registerClass(
-class ActivitiesMenuButton extends PanelMenu.Button {
+const MainMenuButton = GObject.registerClass(
+class MainMenuButton extends PanelMenu.Button {
     _init() {
         super._init(0.5, null);
         
@@ -158,14 +158,14 @@ class ActivitiesMenuButton extends PanelMenu.Button {
         this.menu.box.add_style_class_name('main-menu');
 
         this.set({
-            name: 'panelActivitiesMenu',
+            name: 'panelMainMenu',
             accessible_role: Atk.Role.TOGGLE_BUTTON,
             /* Translators: If there is no suitable word for "Activities"
                in your language, you can use the word for "Overview". */
-            accessible_name: _('ActivitiesMenu'),
+            accessible_name: _('MainMenu'),
         });
         
-        let bin = new St.Bin({name: 'activitiesMenu'});
+        let bin = new St.Bin();
         this.add_child(bin);
         
         this._container = new St.BoxLayout({style_class: 'panel-status-menu-box'});
@@ -177,17 +177,17 @@ class ActivitiesMenuButton extends PanelMenu.Button {
         this._container.add_child(this._iconBox);        
           
         this._label = new St.Label({
-            text: _('Ubuntu'),
+            text: _('Activities'),
             //text: "\uE001",
             y_align: Clutter.ActorAlign.CENTER,
-            style_class: 'activities-label',
+            style_class: 'main-menu-label',
         });        
         //this._container.add_child(this._label);
         
         const icon = new St.Icon({
             //icon_name: 'debian-logo-symbolic',
             icon_name: 'start-here-symbolic',
-            style_class: 'activities-icon',
+            style_class: 'main-menu-icon',
         });
         this._iconBox.set_child(icon);
         
@@ -241,14 +241,7 @@ class ActivitiesMenuButton extends PanelMenu.Button {
 
         this._xdndTimeOut = 0;
         
-        this.menu_build();
-        
-        /*this.smappsitem.menu.connect('open-state-changed', (menu, open) => {
-            if (open) {
-                this.smappsitem.menu.removeAll();
-                this.submenubuild();
-                }
-        });*/  
+        this.menu_build();  
     }
     
     _sessionUpdated() {
@@ -737,7 +730,7 @@ export default class IndicatorExampleExtension extends Extension {
     enable() {
         if (Main.panel.statusArea['activities'])
             Main.panel.statusArea['activities'].hide();
-        this._indicator = new ActivitiesMenuButton();
+        this._indicator = new MainMenuButton();
         Main.panel.addToStatusArea(this.uuid, this._indicator, 0, 'left');
         
         const controls = Main.overview._overview.controls;
