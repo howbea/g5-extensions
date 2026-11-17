@@ -101,7 +101,7 @@ class BatteryIndicator extends SystemIndicator {
             this._percentageLabel.hide();
             this.visible = false;
 
-            //Main.panel.statusArea.quickSettings._system._systemItem.hide();
+            Main.panel.statusArea.quickSettings._system._systemItem.hide();
         }
     }
 });
@@ -202,6 +202,11 @@ export default class QuickSettingsExampleExtension extends Extension {
 
         shutdownItem.disconnect(this._sditemsig);
         shutdownItem.show();
+
+        const index = quickSettings._indicators.get_children().indexOf(quickSettings._darkMode);
+        
+        if(quickSettings._doNotDisturb)
+        quickSettings._indicators.insert_child_at_index(quickSettings._doNotDisturb, index +1);
 
         quickSettings._system._systemItem.show();
 
