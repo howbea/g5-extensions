@@ -31,3 +31,7 @@
     margin-left: 1em; }
   .main-menu .popup-sub-menu .popup-menu-item > :first-child:rtl {
     margin-right: 1em; }
+
+.main-menu .popup-separator-menu-item > StLabel {
+  font-weight: 700;
+  font-size: 0.818em; }
