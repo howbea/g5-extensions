@@ -22,22 +22,17 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Atk from 'gi://Atk';
-import Gio from 'gi://Gio';
 import St from 'gi://St';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
-import Graphene from 'gi://Graphene';
-import AccountsService from 'gi://AccountsService';
-import * as AppFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
+import * as DND from 'resource:///org/gnome/shell/ui/dnd.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 import * as Layout from 'resource:///org/gnome/shell/ui/layout.js';
-import * as Panel from 'resource:///org/gnome/shell/ui/panel.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import * as WorkspaceSwitcherPopup from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+
+const BUTTON_DND_ACTIVATION_TIMEOUT = 250;
 
 const HOT_CORNER_PRESSURE_THRESHOLD = 100;
 const HOT_CORNER_PRESSURE_TIMEOUT = 1000;
@@ -58,6 +53,7 @@ class HotCornerPlus extends Clutter.Actor {
             'trigger',
             this._toggleOverview.bind(this));
 
+        this._verticalBarrier = null;
         this._horizontalBarrier = null;
 
         this.connect('destroy', this._onDestroy.bind(this));
@@ -116,26 +112,8 @@ class HotCornerPlus extends Clutter.Actor {
     }
 });
 
+const ActivitiesIndicator = GObject.registerClass(
 class ActivitiesIndicator extends PanelMenu.Button {
-    static {
-        GObject.registerClass(this);
-
-        const bindingPool = this.get_binding_pool();
-
-        bindingPool.install_closure(
-            'toggle', Clutter.KEY_Return, Clutter.RELEASE_MASK,
-            obj => {
-                obj._toggleAction();
-                return Clutter.EVENT_STOP;
-            });
-        bindingPool.install_closure(
-            'toggle', Clutter.KEY_space, Clutter.RELEASE_MASK,
-            obj => {
-                obj._toggleAction();
-                return Clutter.EVENT_STOP;
-            });
-    }
-
     _init() {
         super._init(0.0, null, true);
 
@@ -146,11 +124,11 @@ class ActivitiesIndicator extends PanelMenu.Button {
                in your language, you can use the word for "Overview". */
             accessible_name: _('Activities'),
         });
-        
+
         let bin = new St.Bin();
         this.add_child(bin);
         
-        this._container = new St.BoxLayout({style_class: 'activities-layout'});
+        this._container = new St.BoxLayout();
         bin.set_child(this._container);
         
         this._iconBox = new St.Bin({
@@ -166,31 +144,23 @@ class ActivitiesIndicator extends PanelMenu.Button {
 
         Main.overview.connectObject('showing',
             () => this.add_style_pseudo_class('checked'),
-            this);        
-        
+            this);
         Main.overview.connectObject('hiding',
             () => this.remove_style_pseudo_class('checked'),
             this);
+            
+        this._updateHotCorners();
 
         this._xdndTimeOut = 0;
-
-        this._clickGesture = new Clutter.ClickGesture();
-        this._clickGesture.connect('recognize', () => {
-            if (Main.overview.shouldToggleByCornerOrButton())
-                Main.overview.toggle();
-        });
-        this.add_action(this._clickGesture);
-        
-        this._updateHotCorners();
     }
-
+    
     handleDragOver(source, _actor, _x, _y, _time) {
         if (source !== Main.xdndHandler)
             return DND.DragMotionResult.CONTINUE;
 
         if (this._xdndTimeOut !== 0)
             GLib.source_remove(this._xdndTimeOut);
-        this._xdndTimeOut = GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, BUTTON_DND_ACTIVATION_TIMEOUT, () => {
+        this._xdndTimeOut = GLib.timeout_add(GLib.PRIORITY_DEFAULT, BUTTON_DND_ACTIVATION_TIMEOUT, () => {
             this._xdndToggleOverview();
         });
         GLib.Source.set_name_by_id(this._xdndTimeOut, '[gnome-shell] this._xdndToggleOverview');
@@ -198,17 +168,38 @@ class ActivitiesIndicator extends PanelMenu.Button {
         return DND.DragMotionResult.CONTINUE;
     }
 
-    vfunc_scroll_event(event) {
+    vfunc_event(event) {
+        if (event.type() === Clutter.EventType.TOUCH_END ||
+            event.type() === Clutter.EventType.BUTTON_RELEASE) {
+            if (Main.overview.shouldToggleByCornerOrButton())
+                Main.overview.toggle();
+        }
+
         return Main.wm.handleWorkspaceScroll(event);
     }
 
-    _toggleAction() {
-        if (Main.overview.shouldToggleByCornerOrButton()) {
-            Main.overview.toggle();
-            return Clutter.EVENT_STOP;
+    vfunc_key_release_event(event) {
+        let symbol = event.get_key_symbol();
+        if (symbol === Clutter.KEY_Return || symbol === Clutter.KEY_space) {
+            if (Main.overview.shouldToggleByCornerOrButton()) {
+                Main.overview.toggle();
+                return Clutter.EVENT_STOP;
+            }
         }
 
         return Clutter.EVENT_PROPAGATE;
+    }
+
+    _xdndToggleOverview() {
+        let [x, y] = global.get_pointer();
+        let pickedActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+
+        if (pickedActor === this && Main.overview.shouldToggleByCornerOrButton())
+            Main.overview.toggle();
+
+        GLib.source_remove(this._xdndTimeOut);
+        this._xdndTimeOut = 0;
+        return GLib.SOURCE_REMOVE;
     }
     
     _updateHotCorners() {    
@@ -228,17 +219,6 @@ class ActivitiesIndicator extends PanelMenu.Button {
         }
         Main.layoutManager.emit('hot-corners-changed');
     }
-
-    _xdndToggleOverview() {
-        const [x, y] = global.get_pointer();
-        const pickedActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
-
-        if (pickedActor === this && Main.overview.shouldToggleByCornerOrButton())
-            Main.overview.toggle();
-
-        GLib.source_remove(this._xdndTimeOut);
-        this._xdndTimeOut = 0;
-    }
     
     destroy() {
 
@@ -249,7 +229,7 @@ class ActivitiesIndicator extends PanelMenu.Button {
         
         super.destroy();
     }
-};
+});
 
 export default class ActivitiesExtension extends Extension {
 
